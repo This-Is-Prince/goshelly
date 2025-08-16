@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/This-Is-Prince/goshelly/app/cmd"
 )
 
 func main() {
+	c := cmd.NewCmd("")
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
 
@@ -16,6 +19,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Fprintf(os.Stdout, "%v: command not found", command[len(command)-1])
+		c.Reset(command)
+		c.Evaluate()
 	}
 }
