@@ -36,7 +36,7 @@ func TestExit(t *testing.T) {
 	// Valid code
 	msg, err = Exit("exit", []string{"0"})
 	require.NoError(t, err)
-	require.Equal(t, "", msg)
+	require.Equal(t, "\n", msg)
 	require.True(t, called)
 	require.Equal(t, 0, got)
 }

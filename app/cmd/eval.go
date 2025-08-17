@@ -22,6 +22,6 @@ func (c *Cmd) Evaluate() {
 	if err != nil {
 		fmt.Fprintf(c.Stderr, "%v\n", err)
 	} else if msg != "" {
-		fmt.Fprintf(c.Stdout, "%s\n", msg)
+		fmt.Fprintf(c.Stdout, "%s", msg)
 	}
 }

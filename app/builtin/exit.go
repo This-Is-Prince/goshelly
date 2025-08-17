@@ -17,21 +17,25 @@ var exitFn = os.Exit
 // no args -> exit 0,
 // one numeric arg 0..255 -> exit with that code,
 // invalid/too many args -> error (do not exit),
-func Exit(cmd string, args []string) (string, error) {
+func Exit(cmd string, args []string) (msg string, err error) {
 	if len(args) > 1 {
-		return "", ErrTooManyArguments
+		err = ErrTooManyArguments
+		return
 	}
 
 	code := 0
 	if len(args) == 1 {
-		n, err := strconv.Atoi(args[0])
-		if err != nil || n < 0 || n > 255 {
-			return "", ErrInvalidExitCode
+		n, e := strconv.Atoi(args[0])
+		if e != nil || n < 0 || n > 255 {
+			err = ErrInvalidExitCode
+			return
 		}
 		code = n
 	}
 
 	exitFn(code)
 
-	return "", nil
+	msg = "\n"
+
+	return
 }
