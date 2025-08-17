@@ -1,17 +1,28 @@
 package cmd
 
-import "strings"
+import (
+	"io"
+	"os"
+	"strings"
+)
 
 type Cmd struct {
 	rawCmd     string
 	cleanedCmd string
 	rCmd       string
 	rArgsCmd   []string
+
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 func NewCmd(rawCmd string) *Cmd {
 	return &Cmd{
 		rawCmd: rawCmd,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	}
 }
 
