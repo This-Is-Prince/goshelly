@@ -1,45 +1,70 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
 type Cmd struct {
-	rawCmd     string
+	raw        string
+	kind       string
 	cleanedCmd string
-	rCmd       string
-	rArgsCmd   []string
+	args       []string
 
 	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
 }
 
-func NewCmd(rawCmd string) *Cmd {
+func NewCmd(raw string) *Cmd {
 	return &Cmd{
-		rawCmd: rawCmd,
+		raw:    raw,
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
 }
 
-func (cmd *Cmd) Reset(rawCmd string) {
-	cmd.rawCmd = rawCmd
-	// All other reset operations
+func (c *Cmd) Clean() *Cmd {
+	c.cleanedCmd = strings.TrimSpace(c.raw)
+
+	return c
 }
 
-func (cmd *Cmd) BuildRunnableCmd() {
-	cmd.Clean()
-
+func (c *Cmd) Build() *Cmd {
 	separator := " "
 
-	splitCmd := strings.Split(cmd.cleanedCmd, separator)
+	splitCmd := strings.Split(c.cleanedCmd, separator)
 
 	if len(splitCmd) > 0 {
-		cmd.rCmd = splitCmd[0]
-		cmd.rArgsCmd = splitCmd[1:]
+		c.kind = splitCmd[0]
+		c.args = splitCmd[1:]
 	}
+
+	return c
+}
+
+func (c *Cmd) Run() (output string, err error) {
+	run, isBuiltin := BUILT_IN_CMDS[c.kind]
+
+	if isBuiltin {
+		output, err = run(c.kind, c.args)
+	} else {
+		output = fmt.Sprintf("%s: command not found\n", c.kind)
+	}
+
+	return
+}
+
+func (c *Cmd) Reset(raw string) {
+	c.raw = raw
+	c.kind = ""
+	c.cleanedCmd = ""
+	c.args = []string{}
+
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
 }

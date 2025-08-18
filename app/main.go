@@ -1,25 +1,11 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-
-	"github.com/This-Is-Prince/goshelly/app/cmd"
+	"github.com/This-Is-Prince/goshelly/app/shell"
 )
 
 func main() {
-	c := cmd.NewCmd("")
-	for {
-		fmt.Fprint(os.Stdout, "$ ")
+	s := shell.NewShell()
 
-		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading input:", err)
-			os.Exit(1)
-		}
-
-		c.Reset(command)
-		c.Evaluate()
-	}
+	s.REPL()
 }
