@@ -13,6 +13,8 @@ var BUILT_IN_CMDS = map[string]struct{}{
 	"exit": emptyType{},
 	"echo": emptyType{},
 	"type": emptyType{},
+	"pwd":  emptyType{},
+	"cd":   emptyType{},
 }
 
 func Type(cmd string, args []string) (output string, err error) {
