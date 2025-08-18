@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -54,61 +53,24 @@ func (c *Cmd) Run() (output string, err error) {
 	if isBuiltin {
 		output, err = run(c.kind, c.args)
 	} else {
-		pathEnv := os.Getenv("PATH")
-		separator := string(os.PathListSeparator)
+		resolved, err := exec.LookPath(c.kind)
+		if err != nil {
+			return "", fmt.Errorf("%s: command not found", c.kind)
+		}
 
-		isExecutable := false
+		cmd := exec.Command(resolved, c.args...)
 
-		for _, path := range strings.Split(pathEnv, separator) {
-			path = filepath.Join(path, c.kind)
-			if info, err := os.Stat(path); err == nil {
-				mode := info.Mode()
+		out, err := cmd.CombinedOutput()
 
-				if mode.Perm()&0111 != 0 {
-					isExecutable = true
-					break
-				}
+		if err != nil {
+			output = strings.TrimSpace(string(out))
+			if output == "" {
+				return "", err
 			}
+			return "", fmt.Errorf("%s", output)
 		}
 
-		if !isExecutable {
-			output = fmt.Sprintf("%s: command not found\n", c.kind)
-			return
-		}
-
-		eCmd := exec.Command(c.kind, c.args...)
-
-		var outputPipe, errorPipe io.ReadCloser
-
-		outputPipe, err = eCmd.StdoutPipe()
-		if err != nil {
-			return
-		}
-
-		errorPipe, err = eCmd.StderrPipe()
-		if err != nil {
-			return
-		}
-
-		err = eCmd.Start()
-		if err != nil {
-			return
-		}
-
-		var outputBytes, errorBytes []byte
-		outputBytes, _ = io.ReadAll(outputPipe)
-		errorBytes, _ = io.ReadAll(errorPipe)
-
-		err = eCmd.Wait()
-		if err != nil {
-			return
-		}
-
-		if len(outputBytes) > 0 {
-			output = fmt.Sprint(string(outputBytes))
-		} else if len(errorBytes) > 0 {
-			err = fmt.Errorf("%v", string(errorBytes))
-		}
+		return string(out), nil
 	}
 
 	return
