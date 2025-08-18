@@ -55,18 +55,25 @@ func (c *Cmd) Run() (output string, err error) {
 		output, err = run(c.kind, c.args)
 	} else {
 		pathEnv := os.Getenv("PATH")
-		separator := ":"
+		separator := string(os.PathListSeparator)
 
-		for path := range strings.SplitSeq(pathEnv, separator) {
+		isExecutable := false
+
+		for _, path := range strings.Split(pathEnv, separator) {
 			path = filepath.Join(path, c.kind)
 			if info, err := os.Stat(path); err == nil {
 				mode := info.Mode()
 
-				if mode.Perm()&0111 == 0 {
-					output = fmt.Sprintf("%s: command not found\n", c.kind)
-					return output, err
+				if mode.Perm()&0111 != 0 {
+					isExecutable = true
+					break
 				}
 			}
+		}
+
+		if !isExecutable {
+			output = fmt.Sprintf("%s: command not found\n", c.kind)
+			return
 		}
 
 		eCmd := exec.Command(c.kind, c.args...)
