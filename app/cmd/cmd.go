@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -52,7 +54,54 @@ func (c *Cmd) Run() (output string, err error) {
 	if isBuiltin {
 		output, err = run(c.kind, c.args)
 	} else {
-		output = fmt.Sprintf("%s: command not found\n", c.kind)
+		pathEnv := os.Getenv("PATH")
+		separator := ":"
+
+		for path := range strings.SplitSeq(pathEnv, separator) {
+			path = filepath.Join(path, c.kind)
+			if info, err := os.Stat(path); err == nil {
+				mode := info.Mode()
+
+				if mode.Perm()&0111 == 0 {
+					output = fmt.Sprintf("%s: command not found\n", c.kind)
+					return output, err
+				}
+			}
+		}
+
+		eCmd := exec.Command(c.kind, c.args...)
+
+		var outputPipe, errorPipe io.ReadCloser
+
+		outputPipe, err = eCmd.StdoutPipe()
+		if err != nil {
+			return
+		}
+
+		errorPipe, err = eCmd.StderrPipe()
+		if err != nil {
+			return
+		}
+
+		err = eCmd.Start()
+		if err != nil {
+			return
+		}
+
+		var outputBytes, errorBytes []byte
+		outputBytes, _ = io.ReadAll(outputPipe)
+		errorBytes, _ = io.ReadAll(errorPipe)
+
+		err = eCmd.Wait()
+		if err != nil {
+			return
+		}
+
+		if len(outputBytes) > 0 {
+			output = fmt.Sprint(string(outputBytes))
+		} else if len(errorBytes) > 0 {
+			err = fmt.Errorf("%v", string(errorBytes))
+		}
 	}
 
 	return

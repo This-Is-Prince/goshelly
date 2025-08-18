@@ -39,8 +39,6 @@ args:
 						output += fmt.Sprintf("%s is %v\n", arg, path)
 						continue args
 					}
-				} else {
-					continue
 				}
 			}
 
