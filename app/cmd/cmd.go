@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -53,24 +54,20 @@ func (c *Cmd) Run() (output string, err error) {
 	if isBuiltin {
 		output, err = run(c.kind, c.args)
 	} else {
-		resolved, err := exec.LookPath(c.kind)
-		if err != nil {
-			return "", fmt.Errorf("%s: command not found", c.kind)
+		cmd := exec.Command(c.kind, c.args...)
+
+		var out []byte
+
+		out, err = cmd.CombinedOutput()
+
+		if errors.Is(err, exec.ErrNotFound) {
+			err = fmt.Errorf("%s: command not found", c.kind)
+			return
 		}
 
-		cmd := exec.Command(resolved, c.args...)
-
-		out, err := cmd.CombinedOutput()
-
-		if err != nil {
-			output = strings.TrimSpace(string(out))
-			if output == "" {
-				return "", err
-			}
-			return "", fmt.Errorf("%s", output)
+		if len(out) > 0 {
+			output = string(out)
 		}
-
-		return string(out), nil
 	}
 
 	return
