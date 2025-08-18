@@ -1,6 +1,11 @@
 package builtin
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 type emptyType struct{}
 
@@ -15,11 +20,30 @@ func Type(cmd string, args []string) (output string, err error) {
 		return
 	}
 
+	pathEnv := os.Getenv("PATH")
+
+args:
 	for _, arg := range args {
 		_, ok := BUILT_IN_CMDS[arg]
 		if ok {
 			output += fmt.Sprintf("%s is a shell builtin\n", arg)
 		} else {
+			separator := ":"
+
+			for path := range strings.SplitSeq(pathEnv, separator) {
+				path = filepath.Join(path, arg)
+				if info, err := os.Stat(path); err == nil {
+					mode := info.Mode()
+
+					if mode.Perm()&0111 != 0 {
+						output += fmt.Sprintf("%s is %v\n", arg, path)
+						continue args
+					}
+				} else {
+					continue
+				}
+			}
+
 			output += fmt.Sprintf("%s: not found\n", arg)
 		}
 	}
