@@ -11,16 +11,17 @@ func Cd(cmd string, args []string) (output string, err error) {
 		return
 	}
 
-	path := args[0]
+	var target string
 
-	if path == "~" {
-		path, err = os.UserHomeDir()
-		if err != nil {
+	if len(args) == 0 || args[0] == "" || args[0] == "~" {
+		if target, err = os.UserHomeDir(); err != nil {
 			return
 		}
+	} else {
+		target = args[0]
 	}
 
-	err = os.Chdir(path)
+	err = os.Chdir(target)
 
 	return
 }
